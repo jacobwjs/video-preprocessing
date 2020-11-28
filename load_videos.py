@@ -1,3 +1,4 @@
+from datetime import datetime 
 import numpy as np
 import pandas as pd
 import imageio
@@ -76,7 +77,7 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--video_folder", default='youtube-taichi', help='Path to youtube videos')
     parser.add_argument("--metadata", default='taichi-metadata-new.csv', help='Path to metadata')
-    parser.add_argument("--out_folder", default='taichi-png', help='Path to output')
+    parser.add_argument("--out_folder", default='taichi-png', type=str, help='Path to output')
     parser.add_argument("--format", default='.png', help='Storing format')
     parser.add_argument("--workers", default=1, type=int, help='Number of workers')
     parser.add_argument("--youtube", default='./youtube-dl', help='Path to youtube-dl')
@@ -85,6 +86,8 @@ if __name__ == "__main__":
                         help="Image shape, None for no resize")
 
     args = parser.parse_args()
+    print("Storing outputs to: ", args.out_folder)
+    
     if not os.path.exists(args.video_folder):
         os.makedirs(args.video_folder)
     if not os.path.exists(args.out_folder):
@@ -92,10 +95,16 @@ if __name__ == "__main__":
     for partition in ['test', 'train']:
         if not os.path.exists(os.path.join(args.out_folder, partition)):
             os.makedirs(os.path.join(args.out_folder, partition))
-
+    
     df = pd.read_csv(args.metadata)
     video_ids = set(df['video_id'])
+    
+    start_time = datetime.now() 
+    
     pool = Pool(processes=args.workers)
     args_list = cycle([args])
     for chunks_data in tqdm(pool.imap_unordered(run, zip(video_ids, args_list))):
         None  
+
+    time_elapsed = datetime.now() - start_time 
+    print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
