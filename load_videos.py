@@ -1,3 +1,4 @@
+from functools import partial
 from datetime import datetime 
 import numpy as np
 import pandas as pd
@@ -27,8 +28,9 @@ def download(video_id, args):
     return video_path
 
 
-def run(data):
-    video_id, args = data
+# def run(data):
+#     video_id, args = data
+def run(video_id, args):
     if not os.path.exists(os.path.join(args.video_folder, video_id.split('#')[0] + '.mp4')):
        download(video_id.split('#')[0], args)
 
@@ -74,6 +76,7 @@ def run(data):
 
 
 if __name__ == "__main__":
+    
     parser = ArgumentParser()
     parser.add_argument("--video_folder", default='youtube-taichi', help='Path to youtube videos')
     parser.add_argument("--metadata", default='taichi-metadata-new.csv', help='Path to metadata')
@@ -103,8 +106,13 @@ if __name__ == "__main__":
     
     pool = Pool(processes=args.workers)
     args_list = cycle([args])
-    for chunks_data in tqdm(pool.imap_unordered(run, zip(video_ids, args_list))):
-        None  
-
+    
+#     for chunks_data in tqdm(pool.imap_unordered(run, zip(video_ids, args_list))):
+#         None  
+    process_func = partial(run, args=args)
+    res = list(tqdm(pool.imap_unordered(process_func, video_ids)))
+    pool.close()
+    pool.join()
+    
     time_elapsed = datetime.now() - start_time 
     print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
